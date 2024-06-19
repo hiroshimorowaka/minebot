@@ -1,7 +1,7 @@
 mod commands;
 mod config;
+mod event_handler;
 mod types;
-
 use crate::commands::status::server_status;
 use crate::config::load_config;
 use dotenv::dotenv;
@@ -19,6 +19,9 @@ async fn main() {
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands: vec![server_status()],
+            event_handler: |_, event, framework, _| {
+                Box::pin(event_handler::event_handler(event, framework))
+            },
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {
@@ -39,5 +42,7 @@ async fn main() {
         .framework(framework)
         .await;
 
-    client.unwrap().start().await.unwrap();
+    if let Err(why) = client.unwrap().start().await {
+        println!("Err with client: {:?}", why);
+    }
 }
